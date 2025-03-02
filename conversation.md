@@ -1,0 +1,1 @@
+Building a responsive React frontend for a Document Management System (DMS) that interfaces with a Flask dummy API. Includes authentication, user management, and document management.
