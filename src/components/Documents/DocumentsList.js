@@ -1,12 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { fetchDocuments, deleteDocument } from '../../store/documentSlice';
 import DocumentForm from './DocumentForm';
 import './DocumentsList.css';
 
 function DocumentsList() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { documents, loading, error } = useSelector((state) => state.documents);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,6 +69,10 @@ function DocumentsList() {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingDocument(null);
+  };
+  
+  const handleView = (documentId) => {
+    navigate(`/documents/view/${documentId}`); // Updated to navigate to the document view page
   };
 
   const getSortIndicator = (key) => {
@@ -153,7 +158,7 @@ function DocumentsList() {
                   <td>{doc.createdBy}</td>
                   <td>{formatDate(doc.createdAt)}</td>
                   <td className="actions-cell">
-                    <button className="btn-view">View</button>
+                    <button className="btn-view" onClick={() => handleView(doc.id)}>View</button>
                     <button className="btn-edit" onClick={() => handleEdit(doc)}>Edit</button>
                     <button className="btn-delete" onClick={() => handleDelete(doc.id)}>Delete</button>
                   </td>

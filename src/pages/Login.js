@@ -1,45 +1,42 @@
-
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { login } from '../store/authSlice';
+import { loginUser } from '../store/authSlice';
 import './Login.css';
 
 function Login() {
-  const dispatch = useDispatch();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useDispatch();
 
-  // Hardcoded users for demo
-  const validUsers = [
-    { username: 'admin', password: 'admin123', role: 'admin' },
-    { username: 'user', password: 'user123', role: 'user' }
-  ];
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!username || !password) {
+      setError('Please enter both username and password');
+      return;
+    }
+
+    setIsLoading(true);
     setError('');
 
-    const user = validUsers.find(
-      (user) => user.username === username && user.password === password
-    );
-
-    if (user) {
-      dispatch(login({ 
-        id: Math.floor(Math.random() * 1000),
-        username: user.username, 
-        role: user.role 
-      }));
-    } else {
-      setError('Invalid username or password');
+    try {
+      const result = await dispatch(loginUser({ username, password }));
+      if (!result.success) {
+        setError('Invalid username or password');
+      }
+    } catch (err) {
+      setError('An error occurred during login');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="login-container">
       <div className="login-card">
-        <h2>Document Management System</h2>
-        <h3>Login</h3>
+        <h2>Login</h2>
+        <h3>Document Management System</h3>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -49,7 +46,8 @@ function Login() {
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              required
+              placeholder="Enter your username"
+              disabled={isLoading}
             />
           </div>
           <div className="form-group">
@@ -59,16 +57,19 @@ function Login() {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
+              placeholder="Enter your password"
+              disabled={isLoading}
             />
           </div>
-          <button type="submit" className="login-btn">Login</button>
+          <button type="submit" className="login-btn" disabled={isLoading}>
+            {isLoading ? 'Logging in...' : 'Log In'}
+          </button>
+          <div className="demo-credentials">
+            <p>Demo Accounts:</p>
+            <p><strong>Admin:</strong> username: admin / password: admin123</p>
+            <p><strong>User:</strong> username: user / password: user123</p>
+          </div>
         </form>
-        <div className="demo-credentials">
-          <p>Demo Credentials:</p>
-          <p>Username: admin, Password: admin123</p>
-          <p>Username: user, Password: user123</p>
-        </div>
       </div>
     </div>
   );

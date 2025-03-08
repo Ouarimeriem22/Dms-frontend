@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addDocument, updateDocument } from '../../store/documentSlice';
 import './DocumentForm.css';
@@ -8,15 +7,22 @@ function DocumentForm({ document, onClose }) {
   const dispatch = useDispatch();
   const isEditing = !!document;
   const currentUser = useSelector(state => state.auth.user);
+  const fileInputRef = useRef(null);
   
   const [formData, setFormData] = useState({
     title: document?.title || '',
     description: document?.description || '',
     content: document?.content || '',
     category: document?.category || 'other',
+    file: null,
+    fileName: document?.fileName || '',
+    fileType: document?.fileType || '',
+    fileSize: document?.fileSize || 0,
+    fileUrl: document?.fileUrl || ''
   });
   
   const [errors, setErrors] = useState({});
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,6 +40,73 @@ function DocumentForm({ document, onClose }) {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const processFile = (file) => {
+    // Create a local URL for the file preview
+    const fileUrl = URL.createObjectURL(file);
+    
+    setFormData(prev => ({
+      ...prev,
+      file,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      fileUrl,
+      // If it's a text file, we can show the content
+      content: file.type.startsWith('text/') ? '' : prev.content
+    }));
+    
+    // If it's a text file, read the content
+    if (file.type.startsWith('text/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFormData(prev => ({
+          ...prev,
+          content: event.target.result
+        }));
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processFile(files[0]);
+    }
+  };
+
+  const handleFileButtonClick = () => {
+    fileInputRef.current.click();
+  };
+
   const validate = () => {
     const newErrors = {};
     
@@ -45,8 +118,9 @@ function DocumentForm({ document, onClose }) {
       newErrors.description = 'Description is required';
     }
     
-    if (!formData.content.trim()) {
-      newErrors.content = 'Content is required';
+    // Check if we have either content or a file
+    if (!formData.content.trim() && !formData.file && !formData.fileUrl) {
+      newErrors.content = 'Either document content or a file is required';
     }
     
     setErrors(newErrors);
@@ -66,9 +140,7 @@ function DocumentForm({ document, onClose }) {
     };
     
     if (!isEditing) {
-      documentData.id = Date.now(); // Generate a temporary ID
-      documentData.createdAt = new Date().toISOString();
-      dispatch(addDocument(documentData));
+      dispatch(addDocument(documentData)); // ID is handled in the slice
     } else {
       dispatch(updateDocument({ ...document, ...documentData }));
     }
@@ -133,6 +205,22 @@ function DocumentForm({ document, onClose }) {
           rows="8"
         ></textarea>
         {errors.content && <div className="error-message">{errors.content}</div>}
+      </div>
+      
+      <div className="form-group file-upload">
+        <label htmlFor="file">File</label>
+        <input
+          type="file"
+          id="file"
+          name="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          hidden
+        />
+        <button type="button" onClick={handleFileButtonClick} className="btn-file">
+          {formData.file ? `Change File` : `Browse File`}
+        </button>
+        {formData.file && <div>Selected File: {formData.fileName}</div>}
       </div>
       
       <div className="form-actions">

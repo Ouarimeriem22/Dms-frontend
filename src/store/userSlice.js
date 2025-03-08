@@ -1,51 +1,33 @@
-
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
-// Mock API functions
-const mockFetchUsers = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        { id: 1, name: 'John Smith', email: 'john@example.com', role: 'admin', createdAt: '2023-01-15T10:30:00Z' },
-        { id: 2, name: 'Sarah Johnson', email: 'sarah@example.com', role: 'user', createdAt: '2023-02-20T14:45:00Z' },
-        { id: 3, name: 'Michael Brown', email: 'michael@example.com', role: 'user', createdAt: '2023-03-10T09:15:00Z' },
-        { id: 4, name: 'Emily Davis', email: 'emily@example.com', role: 'viewer', createdAt: '2023-04-05T11:20:00Z' },
-        { id: 5, name: 'David Wilson', email: 'david@example.com', role: 'admin', createdAt: '2023-05-18T16:30:00Z' },
-      ]);
-    }, 1000);
-  });
-};
+import axios from 'axios'; // Add axios for making HTTP requests
 
 // Async thunks
 export const fetchUsers = createAsyncThunk(
   'users/fetchUsers',
   async () => {
-    const response = await mockFetchUsers();
-    return response;
+    const response = await axios.get('http://localhost:5000/api/users'); // Update the URL as needed
+    return response.data;
   }
 );
 
 export const addUser = createAsyncThunk(
   'users/addUser',
   async (user) => {
-    // In a real app, this would be an API call
-    return user;
+    return user; // In a real app, this would be an API call
   }
 );
 
 export const updateUser = createAsyncThunk(
   'users/updateUser',
   async (user) => {
-    // In a real app, this would be an API call
-    return user;
+    return user; // In a real app, this would be an API call
   }
 );
 
 export const deleteUser = createAsyncThunk(
   'users/deleteUser',
   async (userId) => {
-    // In a real app, this would be an API call
-    return userId;
+    return userId; // In a real app, this would be an API call
   }
 );
 
@@ -55,6 +37,7 @@ const userSlice = createSlice({
     users: [],
     loading: false,
     error: null,
+    nextId: 3, // Start from 3 since you have 2 mock users
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -67,6 +50,10 @@ const userSlice = createSlice({
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
         state.users = action.payload;
+        // Set nextId based on the highest existing ID
+        if (action.payload.length > 0) {
+          state.nextId = Math.max(...action.payload.map(user => user.id)) + 1;
+        }
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false;
@@ -74,7 +61,9 @@ const userSlice = createSlice({
       })
       // Add user
       .addCase(addUser.fulfilled, (state, action) => {
-        state.users.push(action.payload);
+        const newUser = { ...action.payload, id: state.nextId };
+        state.users.push(newUser);
+        state.nextId += 1; // Increment the nextId for the next user
       })
       // Update user
       .addCase(updateUser.fulfilled, (state, action) => {

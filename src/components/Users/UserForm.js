@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { addUser, updateUser } from '../../store/userSlice';
@@ -75,9 +74,7 @@ function UserForm({ user, onClose }) {
     };
     
     if (!isEditing) {
-      userData.password = formData.password;
-      userData.id = Date.now(); // Generate a temporary ID
-      userData.createdAt = new Date().toISOString();
+      userData.password = formData.password; // Password is only needed for new users
       dispatch(addUser(userData));
     } else {
       dispatch(updateUser({ ...user, ...userData }));
